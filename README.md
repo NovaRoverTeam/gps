@@ -9,10 +9,10 @@ WiringPi is required to run this package: www.wiringpi.com
 The module should be connected to the Raspberry Pi as such:
 
   GPS Module:     Raspberry Pi:
-  Vcc        -->  3.3V
-  GND        -->  Ground
-  TX         -->  UART0 RX
-  RX         -->  UART0 TX
+  * Vcc        -->  3.3V
+  * GND        -->  Ground
+  * TX         -->  UART0 RX
+  * RX         -->  UART0 TX
   
-For more information, see the package.xml  
+For more information about pin assignments, see the package.xml  
 
