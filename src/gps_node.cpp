@@ -50,7 +50,7 @@ void ProcessGPSData() {
 
   // Move to longitude data
   raw_data_index += 2;
-  proc_data_index = 0;
+  proc_data_index++;
   while(GPS_data_array[raw_data_index]!=',') {				// ""     ""     "" 
     proc_data_array[proc_data_index] = GPS_data_array[raw_data_index];
     raw_data_index++;
