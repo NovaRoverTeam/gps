@@ -46,12 +46,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+##Generate messages in the 'msg' folder
+add_message_files(
+  FILES
+  Gps.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -131,7 +130,7 @@ include_directories(include  ${catkin_INCLUDE_DIRS})
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(gps src/gps_node.cpp)
-add_dependencies(gps ${catkin_EXPORTED_TARGETS})
+add_dependencies(gps ${catkin_EXPORTED_TARGETS} gps_generate_messages_cpp)
 target_link_libraries(gps wiringPi ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix

@@ -20,44 +20,59 @@
 #include <errno.h>
 #include <wiringPi.h>
 #include <wiringSerial.h>
-#include "std_msgs/String.h"
+#include <gps/Gps.h>
 #include <sstream>
 
 #define LOOP_HERTZ 1		// GPS sends data every ~1 second
 
-char GPS_data_array[40];	// Holds data from the GLL line to be parsed
-char proc_data_array[24];       // Holds parsed latitude and longitude data
+//char GPS_data_array[40];	// Holds data from the GLL line to be parsed
+float latitude, longitude;
+
+
+/**************************************************************************************************
+* DEGREES-MINUTES-SECONDS TO DECIMAL DEGREES CONVERSION FUNCTION
+*
+* Converts a number in decimal-minutes-seconds to decimal degrees and returns it.
+**************************************************************************************************/
+float ConvertDMSToDD(int deg, int min, float sec, int dir) {
+  float DecDeg = dir * ((float)deg) + ((float)min/60) + (sec/3600);
+  return DecDeg;
+}
 
 /***************************************************************************************************
 * DATA PARSING FUNCTIOM
 * This function parses the GLL line sent by module for the GPS coordinates, if it is a valid reading.
 *
-* This function does not assume that the data is fixed length and instead loops through all numbers
-* in the chance that the module does not send a leading zero digit, thus making it variable length.
+* This function assumes that the GLL output format is fixed.
 ***************************************************************************************************/
-void ProcessGPSData() {
-  unsigned int raw_data_index = 1;	// Index 0 contains a comma, so skip
-  unsigned int proc_data_index = 0;
+void ProcessGPSData(char *GPS_data_array) {
+  int lat_deg, lat_min, long_deg, long_min, lat_dir, long_dir;
+  float lat_sec, long_sec;
 
-  // Loop through first field to retrieve all latitude data
-  while(GPS_data_array[raw_data_index]!=',') {				// Comma indicates end of field
-    proc_data_array[proc_data_index] = GPS_data_array[raw_data_index];	// Save required character/digit
-    raw_data_index++;							//
-    proc_data_index++;							// Inc. index of arrays
+  // Calculate latitude degrees, minutes and seconds
+  lat_deg = ((GPS_data_array[1]-'0')*10) + (GPS_data_array[2]-'0');
+  lat_min = ((GPS_data_array[3]-'0')*10) + (GPS_data_array[4]-'0');
+  lat_sec = ((GPS_data_array[6]-'0')*10) + (GPS_data_array[7]-'0') + ((float)(GPS_data_array[8]-'0')/10) + ((float)(GPS_data_array[9]-'0')/100) + ((float)(GPS_data_array[10]-'0')/1000);
+  if(GPS_data_array[12]=='N') {		// Determine direction
+    lat_dir = 1;
   }
-  raw_data_index++;
-  proc_data_array[proc_data_index] = GPS_data_array[raw_data_index];	// Retrieves letter heading (N/S)
-
-  // Move to longitude data
-  raw_data_index += 2;
-  proc_data_index++;
-  while(GPS_data_array[raw_data_index]!=',') {				// ""     ""     "" 
-    proc_data_array[proc_data_index] = GPS_data_array[raw_data_index];
-    raw_data_index++;
-    proc_data_index++;
+  else {
+    lat_dir = -1;
+  } 
+  
+  // Determine longitude
+  long_deg = ((GPS_data_array[14]-'0')*100) + ((GPS_data_array[15]-'0')*10) + (GPS_data_array[16]-'0');
+  long_min = ((GPS_data_array[17]-'0')*10) + (GPS_data_array[18]-'0');
+  long_sec = ((GPS_data_array[20]-'0')*10) + (GPS_data_array[21]-'0') + ((float)(GPS_data_array[22]-'0')/10) + ((float)(GPS_data_array[23]-'0')/100) + ((float)(GPS_data_array[24]-'0')/1000);
+  if(GPS_data_array[26]=='E') {
+    long_dir = 1;
   }
-  raw_data_index++;
-  proc_data_array[proc_data_index] = GPS_data_array[raw_data_index];	// Retrieves letter heading (E/W)
+  else {
+    long_dir = -1;
+  }
+  // Convert DMS to DD
+  latitude = ConvertDMSToDD(lat_deg, lat_min, lat_sec, lat_dir);
+  longitude = ConvertDMSToDD(long_deg, long_min, long_sec, long_dir);
 }
 
 /***************************************************************************************************
@@ -74,14 +89,15 @@ void ProcessGPSData() {
 int main(int argc, char **argv)
 {
   setenv("WIRINGPI_GPIOMEM","1",1);	// Set environmental var to allow non-root access to GPIO pins
-  ros::init(argc, argv, "GPS");		// Initialise ROS package
+  ros::init(argc, argv, "gps");		// Initialise ROS package
   ros::NodeHandle n;
-  ros::Publisher sensor_pub = n.advertise<std_msgs::String>("GPS", 1000);
+  ros::Publisher sensor_pub = n.advertise<gps::Gps>("/gps/gps_data", 1000);
   ros::Rate loop_rate(LOOP_HERTZ);	// Define loop rate
   int fd;
   char uartChar;			// The character retrieved from the UART RX buffer
   unsigned int enable_data_capture = 0;	// Boolean which is set to 1 (TRUE) when GLL line has been located
   unsigned int data_is_valid, array_index;
+  char data_capture_array[40];
   
   // Attempt to open UART
   if((fd=serialOpen("/dev/ttyS0",9600))<0) {	// 9600 baudrate determined from module datasheet
@@ -96,8 +112,7 @@ int main(int argc, char **argv)
 
   while (ros::ok())
   {
-    std::stringstream ss;
-    std_msgs::String msg;
+    gps::Gps msg;
 
     while(1){
       if(serialDataAvail(fd)) {			// If there is new UART data...
@@ -114,17 +129,16 @@ int main(int argc, char **argv)
               case '\r':			// EOL found, GLL line over; end data capture
                 enable_data_capture = 0;
                 if(data_is_valid) {		// If the data is valid...
-                  ProcessGPSData();		// ... parse data for latitude/longitude data
-                  ss << proc_data_array;
+                  ProcessGPSData(data_capture_array);
                 }
                 else {
-                  ss << "INV";			// Otherwise send invalid message reading
+                  ROS_INFO("GPS module cannot locate position.");
                 }
                 break;
               case 'V':				// If the reading is invalid, the module sends a V
                 data_is_valid = 0;		// Set valid reading boolean to 0 (FALSE)
               default:
-                GPS_data_array[array_index] = uartChar;	// Save data if data capture is enabled
+                data_capture_array[array_index] = uartChar;	// Save data if data capture is enabled
                 array_index++;
               }
           }
@@ -132,14 +146,20 @@ int main(int argc, char **argv)
         fflush(stdout);				// Flush buffer
       }
       else {
+        if((latitude==0)&&(longitude==0)) {
+          data_is_valid = 0; // Do not publish message on startup
+        }
         break;					// No data available; end loop to free CPU
       }
     }
     
     // Publish readings
-    msg.data = ss.str();
-    ROS_INFO("%s", msg.data.c_str());
-    sensor_pub.publish(msg);
+    if(data_is_valid) {
+      msg.latitude.data = latitude;
+      msg.longitude.data = longitude;
+      ROS_INFO("Latitude: %f, Longitude: %f", latitude, longitude);
+      sensor_pub.publish(msg);
+    }
     ros::spinOnce();
     loop_rate.sleep();
   }
