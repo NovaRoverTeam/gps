@@ -34,6 +34,13 @@ float latitude, longitude;
 * DEGREES-MINUTES-SECONDS TO DECIMAL DEGREES CONVERSION FUNCTION
 *
 * Converts a number in decimal-minutes-seconds to decimal degrees and returns it.
+*
+* Inputs: int deg - the degree value of the coordinate
+*         int min - the minutes value of the coordinate
+*         float sec - the seconds value of the coordinate, should be a decimal
+*         int dir - the direction of the coordinate as a positive or negative multiplier (1/-1).
+*
+* Output: float DecDeg - the decimal degrees representation of the DMS number
 **************************************************************************************************/
 float ConvertDMSToDD(int deg, int min, float sec, int dir) {
   float DecDeg = dir * ((float)deg) + ((float)min/60) + (sec/3600);
@@ -43,8 +50,14 @@ float ConvertDMSToDD(int deg, int min, float sec, int dir) {
 /***************************************************************************************************
 * DATA PARSING FUNCTIOM
 * This function parses the GLL line sent by module for the GPS coordinates, if it is a valid reading.
-*
+* The output of this function is applied directly to the global variables "latitude" and "longitude".
+* 
 * This function assumes that the GLL output format is fixed.
+*
+* Inputs: char *GPS_data_array - The character array containing all required data from the GLL line.
+*
+* todo: modify function to return obtained coordinates using a float array rather than modifying
+* global variables directly.
 ***************************************************************************************************/
 void ProcessGPSData(char *GPS_data_array) {
   int lat_deg, lat_min, long_deg, long_min, lat_dir, long_dir;
