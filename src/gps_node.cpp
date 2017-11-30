@@ -49,21 +49,26 @@ void ProcessGPSData(char *GPS_data_array) {
   int lat_deg, lat_min, long_deg, long_min, lat_dir, long_dir;
   float lat_sec, long_sec;
 
-  // Calculate latitude degrees, minutes and seconds
+  // Determine latitude in degrees-minutes-seconds (DMS) format.
+  // "GPS_data_array[X]-'0'" converts a number in character format to int, allowing for calculations
   lat_deg = ((GPS_data_array[1]-'0')*10) + (GPS_data_array[2]-'0');
   lat_min = ((GPS_data_array[3]-'0')*10) + (GPS_data_array[4]-'0');
   lat_sec = ((GPS_data_array[6]-'0')*10) + (GPS_data_array[7]-'0') + ((float)(GPS_data_array[8]-'0')/10) + ((float)(GPS_data_array[9]-'0')/100) + ((float)(GPS_data_array[10]-'0')/1000);
-  if(GPS_data_array[12]=='N') {		// Determine direction
-    lat_dir = 1;
+  
+  // Determine latitude direction by checking if character following DMS value is North (N) / South (S).
+  if(GPS_data_array[12]=='N') {
+    lat_dir = 1;  // Let 1 represent North, -1 represent South
   }
   else {
     lat_dir = -1;
   } 
   
-  // Determine longitude
+  // Determine longitude in DMS format
   long_deg = ((GPS_data_array[14]-'0')*100) + ((GPS_data_array[15]-'0')*10) + (GPS_data_array[16]-'0');
   long_min = ((GPS_data_array[17]-'0')*10) + (GPS_data_array[18]-'0');
   long_sec = ((GPS_data_array[20]-'0')*10) + (GPS_data_array[21]-'0') + ((float)(GPS_data_array[22]-'0')/10) + ((float)(GPS_data_array[23]-'0')/100) + ((float)(GPS_data_array[24]-'0')/1000);
+  
+  // Determine longitude direction
   if(GPS_data_array[26]=='E') {
     long_dir = 1;
   }
@@ -80,10 +85,11 @@ void ProcessGPSData(char *GPS_data_array) {
 * Sets up UART connection and periodically reads data on connection for new GPS data.
 * This parsed data is then published via ROS.
 
-* Published message:
-* Valid Reading - xxxx.xxxxxYzzzzz.zzzzzA, where x are numerical latitude coordinates, Y is N/S, z
-* are numerical longitude coordinates and A is E/W.
-* Invalid Reading - INV, the reading is invalid and should be ignored.
+* Published messages:
+* Valid Reading - Two message are sent: one containing the latitude coordinates (msg.latitude) and
+* one which contains the longitude coordinates (msg.longitude). Both coordinates are in decimal 
+* degrees format.
+* Invalid Reading - Nothing. A warning will be printed to the ROS info stream to inform the user.
 ***************************************************************************************************/
 
 int main(int argc, char **argv)
@@ -129,7 +135,7 @@ int main(int argc, char **argv)
               case '\r':			// EOL found, GLL line over; end data capture
                 enable_data_capture = 0;
                 if(data_is_valid) {		// If the data is valid...
-                  ProcessGPSData(data_capture_array);
+                  ProcessGPSData(data_capture_array);  // Obtain the coordinates from the data
                 }
                 else {
                   ROS_INFO("GPS module cannot locate position.");
@@ -147,7 +153,7 @@ int main(int argc, char **argv)
       }
       else {
         if((latitude==0)&&(longitude==0)) {
-          data_is_valid = 0; // Do not publish message on startup
+          data_is_valid = 0; // Do not publish message on startup before data has been received
         }
         break;					// No data available; end loop to free CPU
       }
