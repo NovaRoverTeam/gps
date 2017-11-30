@@ -7,7 +7,8 @@
 * The GPS module being used:
 * www.robotshop.com/ca/en/uart-neo-7m-c-gps-module.html
 *
-* 
+* Author: Andrew Stuart
+* Last Modified by: Andrew Stuart (30/11/2017)
 ***************************************************************************************************/
 
 /***************************************************************************************************
@@ -135,7 +136,7 @@ int main(int argc, char **argv)
               case '\r':			// EOL found, GLL line over; end data capture
                 enable_data_capture = 0;
                 if(data_is_valid) {		// If the data is valid...
-                  ProcessGPSData(data_capture_array);  // Obtain the coordinates from the data
+                  ProcessGPSData(data_capture_array);  // ...obtain coordinates from the data
                 }
                 else {
                   ROS_INFO("GPS module cannot locate position.");
