@@ -43,7 +43,7 @@ float latitude, longitude;
 * Output: float DecDeg - the decimal degrees representation of the DMS number
 **************************************************************************************************/
 float ConvertDMSToDD(int deg, int min, float sec, int dir) {
-  float DecDeg = dir * ((float)deg) + ((float)min/60) + (sec/3600);
+  float DecDeg = (float)dir * (((float)deg) + ((float)min/60) + (sec/3600));
   return DecDeg;
 }
 
