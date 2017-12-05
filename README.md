@@ -4,7 +4,11 @@ The data is retrieved via UART, and is parsed through to obtain the latitude and
 
 The GPS module being used: www.robotshop.com/ca/en/uart-neo-7m-c-gps-module.html
 
-WiringPi is required to run this package: www.wiringpi.com
+## Dependencies:
+
+- WiringPi (http://wiringpi.com/download-and-install/)
+
+## Physical Connections:
 
 The module should be connected to the Raspberry Pi as such:
 
@@ -16,3 +20,10 @@ The module should be connected to the Raspberry Pi as such:
   
 For more information about pin assignments, see the package.xml  
 
+## Publications:
+
+ros::Publisher sensor_pub = n.advertise<gps::Gps>("/gps/gps_data", 1000);
+
+Topic:       **/gps/gps_data**<br />
+Msg type:    gps/Gps (custom)<br />
+Description: Provides latitude and longitude readings from the GPS module.
