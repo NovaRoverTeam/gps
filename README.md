@@ -22,8 +22,6 @@ For more information about pin assignments, see the package.xml
 
 ## Publications:
 
-ros::Publisher sensor_pub = n.advertise<gps::Gps>("/gps/gps_data", 1000);
-
 Topic:       **/gps/gps_data**<br />
 Msg type:    gps/Gps (custom)<br />
 Description: Provides latitude and longitude readings from the GPS module.
