@@ -1,2 +1,2 @@
-std_msgs/Float32 latitude
-std_msgs/Float32 longitude
+float32 latitude
+float32 longitude
