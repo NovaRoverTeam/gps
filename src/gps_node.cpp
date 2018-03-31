@@ -183,8 +183,8 @@ int main(int argc, char **argv)
     
     // Publish readings
     if(data_is_valid) {
-      msg.latitude.data = latitude;
-      msg.longitude.data = longitude;
+      msg.latitude = latitude;
+      msg.longitude = longitude;
       ROS_INFO("Latitude: %f, Longitude: %f", latitude, longitude);
       sensor_pub.publish(msg);
     }
