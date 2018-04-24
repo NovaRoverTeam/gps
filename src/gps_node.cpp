@@ -67,20 +67,20 @@ void ProcessGPSData(char *GPS_data_array) {
   // "GPS_data_array[X]-'0'" converts a number in character format to int, allowing for calculations
   lat_deg = ((GPS_data_array[1]-'0')*10) + (GPS_data_array[2]-'0');
   lat_min = ((GPS_data_array[3]-'0')*10) + (GPS_data_array[4]-'0');
-  lat_sec = ((GPS_data_array[6]-'0')*10) + (GPS_data_array[7]-'0') + ((float)(GPS_data_array[8]-'0')/10) + ((float)(GPS_data_array[9]-'0')/100) + ((float)(GPS_data_array[10]-'0')/1000);
-  
+  lat_sec = (((float)(GPS_data_array[6]-'0')/10) + ((float)(GPS_data_array[7]-'0')/100) + ((float)(GPS_data_array[8]-'0')/1000) + ((float)(GPS_data_array[9]-'0')/10000) + ((float)(GPS_data_array[10]-'0')/100000))*60;
+
   // Determine latitude direction by checking if character following DMS value is North (N) / South (S).
   if(GPS_data_array[12]=='N') {
     lat_dir = 1;  // Let 1 represent North, -1 represent South
   }
   else {
     lat_dir = -1;
-  } 
-  
+  }
+ 
   // Determine longitude in DMS format
   long_deg = ((GPS_data_array[14]-'0')*100) + ((GPS_data_array[15]-'0')*10) + (GPS_data_array[16]-'0');
   long_min = ((GPS_data_array[17]-'0')*10) + (GPS_data_array[18]-'0');
-  long_sec = ((GPS_data_array[20]-'0')*10) + (GPS_data_array[21]-'0') + ((float)(GPS_data_array[22]-'0')/10) + ((float)(GPS_data_array[23]-'0')/100) + ((float)(GPS_data_array[24]-'0')/1000);
+  long_sec = (((float)(GPS_data_array[20]-'0')/10) + ((float)(GPS_data_array[21]-'0')/100) + ((float)(GPS_data_array[22]-'0')/1000) + ((float)(GPS_data_array[23]-'0')/10000) + ((float)(GPS_data_array[24]-'0')/100000))*60;
   
   // Determine longitude direction
   if(GPS_data_array[26]=='E') {
@@ -131,6 +131,7 @@ int main(int argc, char **argv)
   }
 
   while (ros::ok())
+
   {
     gps::Gps msg;
 
