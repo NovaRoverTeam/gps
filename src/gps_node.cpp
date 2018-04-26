@@ -142,84 +142,81 @@ int main(int argc, char **argv)
   {
     gps::Gps msg;
 
-    while(1)
-    {
-      if(!use_fake) // Use real GPS data
-      {
-        // If there is new UART data...
-        if(serialDataAvail(fd)) 
-        {
-          // ... retrieve the next character
-          uartChar = serialGetchar(fd);		
-          
-          // If the character is "L", it must be a GLL line
-          if(uartChar=='L') 
-          {			
-            enable_data_capture = 1;		// So we save the data by enabling data capture
-            array_index = 0;
-            data_is_valid = 1;			// Assume that the reading is valid until otherwise
-          }
-          else 
-          {
-            // If we are in the GLL line...
-            if(enable_data_capture) 
-            {
-              // ... check for EOL char or validity character
-              switch(uartChar) 
-              {			
-                case '\r':			// EOL found, GLL line over; end data capture
-                  enable_data_capture = 0;
-                  // If the data is valid...
-                  if(data_is_valid) 
-                  {		
-                    ProcessGPSData(data_capture_array);  // ...obtain coordinates from the data
-                  }
-                  else 
-                  {
-                    // Otherwise, inform user that coordinates could not be obtained
-                    ROS_INFO("GPS module cannot locate position.");
-                  }
-                  break;
-                case 'V':				// If the reading is invalid, the module sends a "V" char
-                  data_is_valid = 0;		// Set valid reading boolean to 0 (FALSE)
-                default:
-                  data_capture_array[array_index] = uartChar;	// Save all other data if data capture is enabled
-                  array_index++;
-              }
-            }
-          }
-          fflush(stdout);				// Flush buffer
-        }
-        else 
-        {
-          // Do not publish message on startup before data has been received
-          if((latitude==0)&&(longitude==0)) 
-          {
-            data_is_valid = 0; 
-          }
-          break;					// No data available; end loop to free CPU
-        }
+	if(!use_fake) // Use real GPS data
+	{
+	    // If there is new UART data...
+	    if(serialDataAvail(fd)) 
+	    {
+	      // ... retrieve the next character
+	      uartChar = serialGetchar(fd);		
+	      
+	      // If the character is "L", it must be a GLL line
+	      if(uartChar=='L') 
+	      {			
+	        enable_data_capture = 1;		// So we save the data by enabling data capture
+	        array_index = 0;
+	        data_is_valid = 1;			// Assume that the reading is valid until otherwise
+	      }
+	      else 
+	      {
+	        // If we are in the GLL line...
+	        if(enable_data_capture) 
+	        {
+	          // ... check for EOL char or validity character
+	          switch(uartChar) 
+	          {			
+		    case '\r':			// EOL found, GLL line over; end data capture
+		      enable_data_capture = 0;
+		      // If the data is valid...
+		      if(data_is_valid) 
+		      {		
+		        ProcessGPSData(data_capture_array);  // ...obtain coordinates from the data
+		      }
+		      else 
+		      {
+		        // Otherwise, inform user that coordinates could not be obtained
+		        ROS_INFO("GPS module cannot locate position.");
+		      }
+		      break;
+		    case 'V':				// If the reading is invalid, the module sends a "V" char
+		      data_is_valid = 0;		// Set valid reading boolean to 0 (FALSE)
+		    default:
+		      data_capture_array[array_index] = uartChar;	// Save all other data if data capture is enabled
+		      array_index++;
+	          }
+	        }
+	      }
+	      fflush(stdout);				// Flush buffer
+	    }
+	    else 
+	    {
+	      // Do not publish message on startup before data has been received
+	      if((latitude==0)&&(longitude==0)) 
+	      {
+	        data_is_valid = 0; 
+	      }
+	      break;					// No data available; end loop to free CPU
+	    }
 
-        // Publish readings
-        if(data_is_valid) 
-        {
-          msg.latitude = latitude;
-          msg.longitude = longitude;
-          ROS_INFO("Latitude: %f, Longitude: %f", latitude, longitude);
-          sensor_pub.publish(msg);
-        }
-      }
-      else // Use fake gps coordinate
-      {
-        msg.latitude = fake_lat;
-        msg.longitude = fake_long;
-        ROS_INFO("Latitude: %f, Longitude: %f", fake_lat, fake_long);
-        sensor_pub.publish(msg);
-      }
+	    // Publish readings
+	    if(data_is_valid) 
+	    {
+	      msg.latitude = latitude;
+	      msg.longitude = longitude;
+	      ROS_INFO("Latitude: %f, Longitude: %f", latitude, longitude);
+	      sensor_pub.publish(msg);
+	    }
+	}
+	else // Use fake gps coordinate
+	{
+	    msg.latitude = fake_lat;
+	    msg.longitude = fake_long;
+	    ROS_INFO("Latitude: %f, Longitude: %f", fake_lat, fake_long);
+	    sensor_pub.publish(msg);
+	}
 
-      ros::spinOnce();
-      loop_rate.sleep();
-    }
+	ros::spinOnce();
+	loop_rate.sleep();
   }
 
   return 0;
