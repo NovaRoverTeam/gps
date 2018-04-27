@@ -30,7 +30,7 @@
 float latitude, longitude;
 
 bool use_fake; // Use fake coords?
-float fake_lat, fake_long; // Fake GPS coords
+double fake_lat, fake_long; // Fake GPS coords
 
 
 /**************************************************************************************************
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 {
   setenv("WIRINGPI_GPIOMEM","1",1);	// Set environmental var to allow non-root access to GPIO pins
   ros::init(argc, argv, "gps");		// Initialise ROS package
-  ros::NodeHandle n;
+  ros::NodeHandle n("~");
   ros::Publisher sensor_pub = n.advertise<gps::Gps>("/gps/gps_data", 1000);
   ros::Rate loop_rate(LOOP_HERTZ);	// Define loop rate
   int fd;
@@ -123,10 +123,15 @@ int main(int argc, char **argv)
   char data_capture_array[40];
 
   // Grab params
-  n.getParam("use_fake",  use_fake);
-  n.getParam("fake_lat",  fake_lat);
-  n.getParam("fake_long", fake_long);
-  
+  //n.getParam("use_fake",  use_fake);
+  //n.getParam("fake_lat",  fake_lat);
+  //n.getParam("fake_long", fake_long);
+  use_fake=true;
+  fake_lat = -37.9089064;
+  fake_long = 145.1338591;
+
+  ROS_INFO_STREAM("use_fake is " << use_fake);  
+
   // Attempt to open UART
   if((fd=serialOpen("/dev/ttyS0",9600))<0) {	// 9600 baudrate determined from module datasheet
     printf("Unable to open serial device\n");
