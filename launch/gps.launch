@@ -2,17 +2,15 @@
 <launch>
 
   <!-- If fake_coord is set to 1, the gps node will purely 
-       spit out the given fake lat/long coordinate.    -->
-	<arg name="use_fake" default="0"/>
-	<arg name="fake_lat"            />
-	<arg name="fake_long"           />
+       spit out the given fake lat/long coordinate. -->
+       <arg name="use_fake" default="0"/>
+        <arg name="fake_lat"            />
+        <arg name="fake_long"           />
 
-  <node name="gps" pkg="gps" type="gps" output="screen">
-
-    <param name="use_fake"   value="$(arg use_fake)"/>
-		<param name="fake_lat"   value="$(arg fake_lat)"/>
-		<param name="fake_long"  value="$(arg fake_long)"/>
-
-  </node>
+    <node name="gps" pkg="gps" type="gps" output="screen">
+        <param name="use_fake"   value="$(arg use_fake)"/>
+        <param name="fake_lat"   value="$(arg fake_lat)"/>
+        <param name="fake_long"  value="$(arg fake_long)"/>
+    </node>
 
 </launch>

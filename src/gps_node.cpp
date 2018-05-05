@@ -123,12 +123,16 @@ int main(int argc, char **argv)
   char data_capture_array[40];
 
   // Grab params
-  //n.getParam("use_fake",  use_fake);
-  //n.getParam("fake_lat",  fake_lat);
-  //n.getParam("fake_long", fake_long);
-  use_fake=true;
-  fake_lat = -37.9089064;
-  fake_long = 145.1338591;
+  n.param<double>("/gps/fake_lat", fake_lat, 0);
+  n.param<double>("/gps/fake_long", fake_long, 0);
+  n.param<bool>("/gps/use_fake", use_fake, false);
+
+  //n.getParam("/gps/use_fake",  use_fake);
+  //n.getParam("/gps/fake_lat",  fake_lat);
+  //n.getParam("/gps/fake_long", fake_long);
+  //use_fake=true;
+  //fake_lat = -37.9089064;
+  //fake_long = 145.1338591;
 
   ROS_INFO_STREAM("use_fake is " << use_fake);  
 
