@@ -113,7 +113,9 @@ int main(int argc, char **argv)
 {
   setenv("WIRINGPI_GPIOMEM","1",1);	// Set environmental var to allow non-root access to GPIO pins
   ros::init(argc, argv, "gps");		// Initialise ROS package
-  ros::NodeHandle n("~");
+  ros::NodeHandle n("/");
+  ros::NodeHandle np("~"); // Private nodehandle
+
   ros::Publisher sensor_pub = n.advertise<gps::Gps>("/gps/gps_data", 1000);
   ros::Rate loop_rate(LOOP_HERTZ);	// Define loop rate
   int fd;
@@ -123,16 +125,16 @@ int main(int argc, char **argv)
   char data_capture_array[40];
 
   // Grab params
-  n.param<double>("/gps/fake_lat", fake_lat, 0);
-  n.param<double>("/gps/fake_long", fake_long, 0);
-  n.param<bool>("/gps/use_fake", use_fake, false);
+  np.param<double>("/gps/fake_lat", fake_lat, 0);
+  np.param<double>("/gps/fake_long", fake_long, 0);
+  np.param<bool>("/gps/use_fake", use_fake, false);
 
   //n.getParam("/gps/use_fake",  use_fake);
   //n.getParam("/gps/fake_lat",  fake_lat);
   //n.getParam("/gps/fake_long", fake_long);
-  //use_fake=true;
-  //fake_lat = -37.9089064;
-  //fake_long = 145.1338591;
+  use_fake=true;
+  fake_lat = -37.9089064;
+  fake_long = 145.1338591;
 
   ROS_INFO_STREAM("use_fake is " << use_fake);  
 
