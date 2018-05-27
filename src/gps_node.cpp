@@ -27,7 +27,7 @@
 #define LOOP_HERTZ 1		// GPS sends data every ~1 second
 
 //char GPS_data_array[40];	// Holds data from the GLL line to be parsed
-float latitude, longitude;
+double latitude, longitude;
 
 bool use_fake; // Use fake coords?
 double fake_lat, fake_long; // Fake GPS coords
@@ -114,29 +114,28 @@ int main(int argc, char **argv)
   setenv("WIRINGPI_GPIOMEM","1",1);	// Set environmental var to allow non-root access to GPIO pins
   ros::init(argc, argv, "gps");		// Initialise ROS package
   ros::NodeHandle n("/");
-  ros::NodeHandle np("~"); // Private nodehandle
+  //ros::NodeHandle np("~"); // Private nodehandle
 
   ros::Publisher sensor_pub = n.advertise<gps::Gps>("/gps/gps_data", 1000);
   ros::Rate loop_rate(LOOP_HERTZ);	// Define loop rate
   int fd;
   char uartChar;			// The character retrieved from the UART RX buffer
   unsigned int enable_data_capture = 0;	// Boolean which is set to 1 (TRUE) when GLL line has been located
-  unsigned int data_is_valid, array_index;
+  unsigned int data_is_valid = 0;
+  unsigned int array_index;
   char data_capture_array[40];
+  bool print_coords = 0;
 
   // Grab params
-  np.param<double>("/gps/fake_lat", fake_lat, 0);
-  np.param<double>("/gps/fake_long", fake_long, 0);
-  np.param<bool>("/gps/use_fake", use_fake, false);
 
   //n.getParam("/gps/use_fake",  use_fake);
   //n.getParam("/gps/fake_lat",  fake_lat);
   //n.getParam("/gps/fake_long", fake_long);
-  use_fake=true;
+  use_fake=false;
   fake_lat = -37.9089064;
   fake_long = 145.1338591;
 
-  ROS_INFO_STREAM("use_fake is " << use_fake);  
+  //ROS_INFO_STREAM("use_fake is " << use_fake);  
 
   // Attempt to open UART
   if((fd=serialOpen("/dev/ttyS0",9600))<0) {	// 9600 baudrate determined from module datasheet
@@ -153,20 +152,21 @@ int main(int argc, char **argv)
 
   {
     gps::Gps msg;
-
-	if(!use_fake) // Use real GPS data
-	{
+    while(1)
+    {
+	//if(!use_fake) // Use real GPS data
+	//{
 	    // If there is new UART data...
 	    if(serialDataAvail(fd)) 
 	    {
 	      // ... retrieve the next character
-	      uartChar = serialGetchar(fd);		
-	      
+	      uartChar = serialGetchar(fd);
 	      // If the character is "L", it must be a GLL line
 	      if(uartChar=='L') 
 	      {			
 	        enable_data_capture = 1;		// So we save the data by enabling data capture
 	        array_index = 0;
+            print_coords = 0;
 	        data_is_valid = 1;			// Assume that the reading is valid until otherwise
 	      }
 	      else 
@@ -183,6 +183,7 @@ int main(int argc, char **argv)
 		      if(data_is_valid) 
 		      {		
 		        ProcessGPSData(data_capture_array);  // ...obtain coordinates from the data
+                print_coords = 1;
 		      }
 		      else 
 		      {
@@ -211,21 +212,22 @@ int main(int argc, char **argv)
 	    }
 
 	    // Publish readings
-	    if(data_is_valid) 
+	    if(data_is_valid && print_coords) 
 	    {
 	      msg.latitude = latitude;
 	      msg.longitude = longitude;
-	      ROS_INFO("Latitude: %f, Longitude: %f", latitude, longitude);
+//	      ROS_INFO("Latitude: %f, Longitude: %f", latitude, longitude);
 	      sensor_pub.publish(msg);
 	    }
 	}
+    /*
 	else // Use fake gps coordinate
 	{
 	    msg.latitude = fake_lat;
 	    msg.longitude = fake_long;
 	    ROS_INFO("Latitude: %f, Longitude: %f", fake_lat, fake_long);
 	    sensor_pub.publish(msg);
-	}
+	}*/
 
 	ros::spinOnce();
 	loop_rate.sleep();
