@@ -10,6 +10,14 @@ https://cdn-learn.adafruit.com/downloads/pdf/adafruit-ultimate-gps.pdf
 
 Author: Andrew Stuart (94andrew.stuart@gmail.com)
 Last modified: 20/09/2019
+
+Publishes:
+    NatSatFix (sensor_msgs):
+        latitude - the latitude of the GPS in decimal degrees
+        longitude - the longitude of the GPS in decimal degrees
+
+Subscribes to:
+    None
 '''
 
 #!/usr/bin/env python
