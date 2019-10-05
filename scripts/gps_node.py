@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 NOVA ROVER TEAM
 
@@ -9,10 +10,10 @@ More information on the wiring of the sensor + transmitted data can be found her
 https://cdn-learn.adafruit.com/downloads/pdf/adafruit-ultimate-gps.pdf
 
 Author: Andrew Stuart (94andrew.stuart@gmail.com)
-Last modified: 20/09/2019
+Last modified: 5/10/2019 by Marcel Masque
 
 Publishes:
-    NatSatFix (sensor_msgs):
+    NatSatFix (sensor_msgs) named ant_gps:
         latitude - the latitude of the GPS in decimal degrees
         longitude - the longitude of the GPS in decimal degrees
 
@@ -20,7 +21,6 @@ Subscribes to:
     None
 '''
 
-#!/usr/bin/env python
 
 import rospy
 import serial
@@ -143,7 +143,6 @@ class NMEAParser:
             # Convert each coordinate into decimal degrees
             latitude_DD = self.__convertDMToDD(lat_deg, lat_min, latitude_direction)
             longitude_DD = self.__convertDMToDD(long_deg, long_min, longitude_direction)
-
             return [latitude_DD, longitude_DD]
 
     def getGPSLocation(self, data):
@@ -173,15 +172,16 @@ class NMEAParser:
                     if(len(split_RMC_line) <> 13):  # 13 fields are expected, variations from this point to corruption
                         rospy.logwarn("INVALID RMC READING - CHECK FOR HARDWARE CORRUPTION")
                         return
+		   
                     if(split_RMC_line[2] == 'V'):   # V is printed at the end of the line if no fix has been established
-                        rospy.logwarn("NO GPS FIX")
-                        return
+                    	rospy.logwarn("NO GPS FIX")
+		    	return
                     elif(split_RMC_line[2] == 'A'): # A indicates a valid GPS fix
-                        return self.__formatGPSData(split_RMC_line[3:7]) # Format the GPS data into decimal degrees
+                    	return self.__formatGPSData(split_RMC_line[3:7]) # Format the GPS data into decimal degrees
                     else:
                         rospy.logwarn("INVALID RMC READING - CHECK FOR HARDWARE CORRUPTION")
-                        return
-
+                     	return
+		
 
 
 def transmitGPS():
@@ -190,16 +190,23 @@ def transmitGPS():
     on the serial line and converts this data to GPS coordinates if available. The frequency of checks depends on the 
     global variable ROS_REFRESH_RATE.
     '''
+
     gps_interface = SerialInterface("/dev/serial0", 9600, 3000)
+    msg = NavSatFix()
     pub = rospy.Publisher('ant_gps', NavSatFix, queue_size=10)
     rospy.init_node('antenna_gps', anonymous=True)
     rate = rospy.Rate(ROS_REFRESH_RATE)
     parser = NMEAParser('NMEA_0183')
     while not rospy.is_shutdown():
         received_data = gps_interface.readSerialInput()                 # Get serial data
-        [latitude, longitude] = parser.getGPSLocation(received_data)    # Parse data and set message fields
-        pub.latitude = latitude                                         # Publish coordinates
-        pub.longitude = longitude
+	rospy.loginfo(received_data)
+	try:
+		[latitude, longitude] = parser.getGPSLocation(received_data)    # Parse data and set message fields
+	except:
+		[latitude, longitude] = [0.0, 0.0]
+        msg.latitude = latitude                                         # Publish coordinates
+        msg.longitude = longitude
+	pub.publish(msg)	
         rate.sleep()                                                    # Sleep until next check
 
 if __name__ == '__main__':
@@ -207,3 +214,4 @@ if __name__ == '__main__':
         transmitGPS()
     except rospy.ROSInterruptException:
         pass
+
