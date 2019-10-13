@@ -10,7 +10,7 @@ More information on the wiring of the sensor + transmitted data can be found her
 https://cdn-learn.adafruit.com/downloads/pdf/adafruit-ultimate-gps.pdf
 
 Author: Andrew Stuart (94andrew.stuart@gmail.com)
-Last modified: 5/10/2019 by Marcel Masque
+Last modified: 13/10/2019 by Marcel Masque (marcel.masques@gmail.com)
 
 Publishes:
     NatSatFix (sensor_msgs) named ant_gps:
@@ -175,13 +175,52 @@ class NMEAParser:
 		   
                     if(split_RMC_line[2] == 'V'):   # V is printed at the end of the line if no fix has been established
                     	rospy.logwarn("NO GPS FIX")
-		    	return
+                        return
+                    if !(computeChecksum(data_line)):
+                        rospy.logwarn("CHECKSUM FAILED - POSSIBLE DATA CORRUPTION")
+                        return
+
                     elif(split_RMC_line[2] == 'A'): # A indicates a valid GPS fix
                     	return self.__formatGPSData(split_RMC_line[3:7]) # Format the GPS data into decimal degrees
                     else:
                         rospy.logwarn("INVALID RMC READING - CHECK FOR HARDWARE CORRUPTION")
-                     	return
-		
+                    	return
+
+
+    def computeChecksum(self,data):
+        """compute a char wise XOR checksum of the data and compare it to the hex value after the * in the data string
+
+        Argument:
+        data {str} -- String containing comma separated GPS data with checksum result directly after *
+        Returns: 
+        {bool} -- True if checksum is correct, False otherwise
+        """
+        try:
+            #take a substring between $ and *
+            s1 = data.split('*')[0]
+        except:
+            #if we can't find a * the data is corrupt; return false
+            return False
+
+        #compute char wise checksum
+        checksum = 0
+        for char in s1:
+            checksum ^= ord(char)
+        #convert to hex for comparison with checksum value in str
+        checksum = hex(checksum)
+        #split the data string and access the checksum hex 
+        #[1:] to skip over *
+        try:
+            checksum_str = "0x" + data.split(',')[-1][1:]
+        except:
+            return False
+        checksum_int = int(checksum_str, 16)
+        hex_checksum = hex(checksum_int)
+
+        if checksum != hex_checksum:
+            return False
+        else:
+            return True	
 
 
 def transmitGPS():
