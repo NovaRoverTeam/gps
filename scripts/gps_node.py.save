@@ -55,7 +55,7 @@ class SerialInterface:
         self.baud_rate = baud
         self.timeout = timeout
         self.uart = serial.Serial(self.serial_address, baudrate=self.baud_rate, timeout=self.timeout)
-	#set minimum info from GPS, receives RMC only
+#set minimum info from
         self.uart.write('$PMTK300,100,0,0,0,0*2')
 
     def __clearReceivedData(self):
