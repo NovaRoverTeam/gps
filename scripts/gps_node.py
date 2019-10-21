@@ -25,7 +25,6 @@ Subscribes to:
 import rospy
 import serial
 from sensor_msgs.msg import NavSatFix
-import adafruit_gps
 # Frequency at which the main code is repeated
 ROS_REFRESH_RATE = 1
 
@@ -55,9 +54,6 @@ class SerialInterface:
         self.baud_rate = baud
         self.timeout = timeout
         self.uart = serial.Serial(self.serial_address, baudrate=self.baud_rate, timeout=self.timeout)
-	#set minimum info from GPS, receives RMC only
-        self.uart.write('$PMTK300,100,0,0,0,0*2')
-
     def __clearReceivedData(self):
         self.received_data = ""
 
@@ -67,7 +63,6 @@ class SerialInterface:
         while(self.uart.inWaiting() > 0):
             self.received_data += self.uart.read()
         return self.received_data
-
 
 class NMEAParser:
     '''
@@ -187,6 +182,18 @@ class NMEAParser:
                         rospy.logwarn("INVALID RMC READING - CHECK FOR HARDWARE CORRUPTION")
                     	return 0.0, 0.0
 
+
+
+    #Yoinked from adafruit: https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py
+    def send_command(ser, command):
+        ser.write(b'$')
+        ser.write(command)
+        checksum = 0
+        for char in command:
+            checksum ^= char
+        ser.write(b'*')
+        ser.write(bytes('{:02x}'.format(checksum).upper(), "ascii"))
+        ser.write(b'\r\n')
 
     def computeChecksum(self,data):
         """compute a char wise XOR checksum of the data and compare it to the hex value after the * in the data string
