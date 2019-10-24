@@ -24,9 +24,10 @@ Subscribes to:
 
 import rospy
 import serial
+import time
 from sensor_msgs.msg import NavSatFix
 # Frequency at which the main code is repeated
-ROS_REFRESH_RATE = 1
+ROS_REFRESH_RATE = 10
 
 class SerialInterface:
     '''
@@ -64,12 +65,17 @@ class SerialInterface:
             self.received_data += self.uart.read()
         return self.received_data
 
-class GPSSerialInterFace(SerialInterface):
-    def __init__():
-        super(GPSSerialInterFace, self).__init__()
+class GPSSerialInterface(SerialInterface):
+    ''' 
+    THis class provides a specific serial interface for a GPS module recieving NMEA data. The GPS is configured to send
+    only RMC data at a rate of 10 Hz
+    '''
+    def __init__(self, *args, **kwargs):
+        ''' Method passes all given arguments to superclass and configures GPS to recieve RMC data and refresh at 10hz'''
+        SerialInterface.__init__(self, *args, **kwargs)
         self.configureGPS()
 
-    def configureGPS():
+    def configureGPS(self):
         ''' Configures GPS to return only RMC data and sets its refresh rate to 10Hz'''
 
         self.send_command(self.uart, b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
@@ -77,16 +83,20 @@ class GPSSerialInterFace(SerialInterface):
         time.sleep(1)
         self.send_command(self.uart, b'PMTK220,100')
 
-    #Yoinked from adafruit: https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py
-    def send_command(ser, command):
-        '''Formats commands to be sent to GPS with '$' character at beginning and adds a checksum and \r\n lines to the sent command'''
+    def send_command(self, ser, command):
+        '''
+        Formats commands to be sent to GPS with '$' character at beginning and adds a checksum and \r\n lines to the sent command
+        This function is a modified version of adafruits send_command function in their adafruit-gps library
+        (https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py) that works in python2
+        '''
+
         ser.write(b'$')
         ser.write(command)
         checksum = 0
         for char in command:
-            checksum ^= char
+            checksum ^= ord(char)
         ser.write(b'*')
-        ser.write(bytes('{:02x}'.format(checksum).upper(), "ascii"))
+        ser.write(bytes('{:02x}'.format(checksum).upper()))
         ser.write(b'\r\n')
 
 class NMEAParser:
@@ -262,7 +272,7 @@ def transmitGPS():
     global variable ROS_REFRESH_RATE.
     '''
 
-    gps_interface = SerialInterface("/dev/serial0", 9600, 3000)
+    gps_interface = GPSSerialInterface("/dev/serial0", 9600, 3000)
     msg = NavSatFix()
     pub = rospy.Publisher('ant_gps', NavSatFix, queue_size=10)
     rospy.init_node('antenna_gps', anonymous=True)

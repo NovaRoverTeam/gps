@@ -6,15 +6,16 @@ import time
 
 port = "/dev/serial0"
 
-#Yoinked from adafruit: https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py
 def send_command(ser, command):
     ser.write(b'$')
     ser.write(command)
     checksum = 0
     for char in command:
-        checksum ^= char
+        checksum ^= ord(char)
+
+    print(type(checksum))
     ser.write(b'*')
-    ser.write(bytes('{:02x}'.format(checksum).upper(), "ascii"))
+    ser.write(bytes('{:02x}'.format(checksum).upper()))
     ser.write(b'\r\n')
 
 ser = serial.Serial(port, 9600, timeout=3000)
