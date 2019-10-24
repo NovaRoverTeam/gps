@@ -64,6 +64,31 @@ class SerialInterface:
             self.received_data += self.uart.read()
         return self.received_data
 
+class GPSSerialInterFace(SerialInterface):
+    def __init__():
+        super(GPSSerialInterFace, self).__init__()
+        self.configureGPS()
+
+    def configureGPS():
+        ''' Configures GPS to return only RMC data and sets its refresh rate to 10Hz'''
+
+        self.send_command(self.uart, b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
+        #Need to do sleep between commands so GPS accepts all of the commands.
+        time.sleep(1)
+        self.send_command(self.uart, b'PMTK220,100')
+
+    #Yoinked from adafruit: https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py
+    def send_command(ser, command):
+        '''Formats commands to be sent to GPS with '$' character at beginning and adds a checksum and \r\n lines to the sent command'''
+        ser.write(b'$')
+        ser.write(command)
+        checksum = 0
+        for char in command:
+            checksum ^= char
+        ser.write(b'*')
+        ser.write(bytes('{:02x}'.format(checksum).upper(), "ascii"))
+        ser.write(b'\r\n')
+
 class NMEAParser:
     '''
     This class parses through NMEA formatted data to retrieve GPS coordinates. Only NMEA 0183 
