@@ -10,10 +10,10 @@ More information on the wiring of the sensor + transmitted data can be found her
 https://cdn-learn.adafruit.com/downloads/pdf/adafruit-ultimate-gps.pdf
 
 Author: Andrew Stuart (94andrew.stuart@gmail.com)
-Last modified: 14/10/2019 by Marcel Masque (marcel.masques@gmail.com)
+Last modified: 14/10/2019 by Josh Cherubino (josh.cherubino@gmail.com)
 
 Publishes:
-    NatSatFix (sensor_msgs) named ant_gps:
+    NatSatFix (sensor_msgs) named /gps/raw_gps:
         latitude - the latitude of the GPS in decimal degrees
         longitude - the longitude of the GPS in decimal degrees
 
@@ -261,8 +261,8 @@ def transmitGPS():
 
     gps_interface = GPSSerialInterface("/dev/serial0", 9600, 3000)
     msg = NavSatFix()
-    pub = rospy.Publisher('ant_gps', NavSatFix, queue_size=10)
-    rospy.init_node('antenna_gps', anonymous=True)
+    pub = rospy.Publisher('/gps/raw_gps', NavSatFix, queue_size=10)
+    rospy.init_node('raw_gps', anonymous=True)
     rate = rospy.Rate(ROS_REFRESH_RATE)
     parser = NMEAParser('NMEA_0183')
     while not rospy.is_shutdown():
