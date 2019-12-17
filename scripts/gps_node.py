@@ -21,7 +21,6 @@ Subscribes to:
     None
 '''
 
-
 import rospy
 import serial
 import time
@@ -40,7 +39,6 @@ class SerialInterface:
         timeout (int): the maximum time in milliseconds for receiving bytes before returning
         received_data (str): the received message from serial
         uart (obj): the serial object
-    TODO: Implement method to close serial connection
 
     '''
     def __init__(self, serial_channel, baud, timeout):
@@ -54,7 +52,22 @@ class SerialInterface:
         self.serial_address = serial_channel
         self.baud_rate = baud
         self.timeout = timeout
-        self.uart = serial.Serial(self.serial_address, baudrate=self.baud_rate, timeout=self.timeout)
+
+        #Create and configure serial interface WITHOUT opening it (which is handled in __enter__ method)
+        self.uart = serial.Serial()
+        self.uart.port = self.serial_address
+        self.uart.baudrate = self.baud_rate
+        self.uart.timeout = self.timeout
+
+    def __enter__(self):
+        '''Method called to open serial connection when using a context manager'''
+        self.uart.open()
+        return self
+
+    def __exit__(self, *args):
+        '''Method called to close serial connection following end of a context manager block'''
+        self.uart.close()
+
     def __clearReceivedData(self):
         self.received_data = ""
 
@@ -73,7 +86,6 @@ class GPSSerialInterface(SerialInterface):
     def __init__(self, *args, **kwargs):
         ''' Method passes all given arguments to superclass and configures GPS to recieve RMC data and refresh at 10hz'''
         SerialInterface.__init__(self, *args, **kwargs)
-        self.configureGPS()
 
     def configureGPS(self):
         ''' Configures GPS to return only RMC data and sets its refresh rate to 10Hz'''
@@ -134,6 +146,7 @@ class NMEAParser:
             direction (char/str): the coordinate direction (N/S/E/W)
 
         Returns:
+
             float: the coordinate in decimal degrees format
 
         TODO: Add range limits
@@ -259,24 +272,26 @@ def transmitGPS():
     global variable ROS_REFRESH_RATE.
     '''
 
-    gps_interface = GPSSerialInterface("/dev/serial0", 9600, 3000)
-    msg = NavSatFix()
-    pub = rospy.Publisher('/gps/raw_gps', NavSatFix, queue_size=10)
-    rospy.init_node('raw_gps', anonymous=True)
-    rate = rospy.Rate(ROS_REFRESH_RATE)
-    parser = NMEAParser('NMEA_0183')
-    while not rospy.is_shutdown():
-        received_data = gps_interface.readSerialInput()                 # Get serial data
-	rospy.loginfo(received_data)
-	try:
-		[latitude, longitude] = parser.getGPSLocation(received_data)    # Parse data and set message fields
-	        msg.latitude = latitude                                         # Publish coordinates
-        	msg.longitude = longitude
-		pub.publish(msg)	
-        	rate.sleep()                                                    # Sleep until next check
-	except:
-		rate.sleep()
-		pass
+    with GPSSerialInterface("/dev/serial0", 9600, 3000) as gps_interface:
+        gps_interface.configureGPS()
+        msg = NavSatFix()
+        pub = rospy.Publisher('/gps/raw_gps', NavSatFix, queue_size=10)
+        rospy.init_node('raw_gps', anonymous=True)
+        rate = rospy.Rate(ROS_REFRESH_RATE)
+        parser = NMEAParser('NMEA_0183')
+        while not rospy.is_shutdown():
+            received_data = gps_interface.readSerialInput()                 # Get serial data
+            rospy.loginfo(received_data)
+            try:
+                    [latitude, longitude] = parser.getGPSLocation(received_data)    # Parse data and set message fields
+                    msg.latitude = latitude                                         # Publish coordinates
+                    msg.longitude = longitude
+                    pub.publish(msg)	
+                    rate.sleep()                                                    # Sleep until next check
+            except:
+                    rate.sleep()
+                    pass
+
 if __name__ == '__main__':
     try:
         transmitGPS()
