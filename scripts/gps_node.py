@@ -10,7 +10,7 @@ More information on the wiring of the sensor + transmitted data can be found her
 https://cdn-learn.adafruit.com/downloads/pdf/adafruit-ultimate-gps.pdf
 
 Author: Andrew Stuart (94andrew.stuart@gmail.com)
-Last modified: 14/10/2019 by Josh Cherubino (josh.cherubino@gmail.com)
+Last modified: 17/12/2019 by Josh Cherubino (josh.cherubino@gmail.com)
 
 Publishes:
     NatSatFix (sensor_msgs) named /gps/raw_gps:
