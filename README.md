@@ -1,8 +1,9 @@
 # ROS GPS Package
-This code is a ROS package which periodically retrieves data from a Waveshare NEO-7M-C GPS module. 
+This code is a ROS package which periodically retrieves data from a Adafruit
+Ultimate v3 GPS module.
 The data is retrieved via UART, and is parsed through to obtain the latitude and longitude GPS coordinates.
 
-The GPS module being used: www.robotshop.com/ca/en/uart-neo-7m-c-gps-module.html
+The GPS module being used: https://www.adafruit.com/product/746
 
 ## Dependencies:
 
@@ -23,5 +24,5 @@ For more information about pin assignments, see the package.xml
 ## Publications:
 
 Topic:       **/gps/gps_data**<br />
-Msg type:    gps/Gps (custom)<br />
+Msg type:    NavSatFix msg  <br />
 Description: Provides latitude and longitude readings from the GPS module.

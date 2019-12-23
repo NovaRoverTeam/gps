@@ -13,7 +13,7 @@ Author: Andrew Stuart (94andrew.stuart@gmail.com)
 Last modified: 17/12/2019 by Josh Cherubino (josh.cherubino@gmail.com)
 
 Publishes:
-    NatSatFix (sensor_msgs) named /gps/raw_gps:
+    NatSatFix (sensor_msgs) named /gps/gps_data:
         latitude - the latitude of the GPS in decimal degrees
         longitude - the longitude of the GPS in decimal degrees
 
@@ -294,8 +294,8 @@ def transmitGPS():
     with GPSSerialInterface("/dev/serial0", 9600, 3000) as gps_interface:
         gps_interface.configureGPS() #configure GPS to return only RMC data @10hz
         msg = NavSatFix()
-        pub = rospy.Publisher('/gps/raw_gps', NavSatFix, queue_size=10)
-        rospy.init_node('raw_gps', anonymous=True)
+        pub = rospy.Publisher('/gps/gps_data', NavSatFix, queue_size=10)
+        rospy.init_node('gps_data', anonymous=True)
         rate = rospy.Rate(ROS_REFRESH_RATE)
         parser = NMEAParser('NMEA_0183')
         while not rospy.is_shutdown():
