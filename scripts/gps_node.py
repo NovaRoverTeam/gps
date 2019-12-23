@@ -82,36 +82,57 @@ class GPSSerialInterface(SerialInterface):
     ''' 
     This class provides a specific serial interface for a Adafruit Ultimate GPS v3 module recieving NMEA data. 
 
-    Attributes (identical to SerialInterface):
+    Attributes:
         serial_address (str): the name of the serial connection
         baud_rate (int): the baud rate of the serial connection
         timeout (int): the maximum time in milliseconds for receiving bytes before returning
         received_data (str): the received message from serial
         uart (obj): the serial object
 
+        refresh_rate: the rate at which the GPS module returns data - must lie
+        between 1-10 Hz
+
     TODO: Configure this class to provide more configuration options (in its current state the GPS is configured to transmit 
     only RMC data at a rate of 10 Hz)
     '''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, refresh_rate, *args, **kwargs):
         '''
         Arguments:
             serial_channel (str): see attr
             baud (int): see attr
             timeout (int): see attr
+            refresh_rate (int): see attr
         '''
+        if not 1 >= refresh_rate <= 10:
+            raise ValueError('Inappropriate value for refresh_rate, must be an
+            integer between 1 and 10')
+
         SerialInterface.__init__(self, *args, **kwargs)
 
     def configureGPS(self):
         '''
-        Configures GPS to return only RMC data and sets its refresh rate to 10 Hz
+        Configures GPS to return only RMC data and sets its refresh rate to
+        value specified by refresh_rate attr
+        WARNING: Setting a high refresh rate without limiting what types of data
+        are returned will result in data loss
+        
         TODO: Provide further configuration options
         '''
-
+        
+        #Receive only RMC Data
         self.send_command(self.uart, b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
-        #Need to do sleep between commands so GPS accepts all of the commands.
+        #Need to sleep between commands so GPS accepts all of the commands.
         time.sleep(1)
-        self.send_command(self.uart, b'PMTK220,100')
+
+        rate_command = b'PMTK220,' +  bytes(self.__determineMSValue(self))
+        
+        self.send_command(self.uart, rate_command)
+    
+    def __determineMSValue(self):
+        '''Helper function to determine ms delay value required to set GPS to
+        desired refresh rate'''
+        return int(1.0/self.refresh_rate * 1000)
 
     def send_command(self, ser, command):
         '''
@@ -291,7 +312,7 @@ def transmitGPS():
     global variable ROS_REFRESH_RATE.
     '''
 
-    with GPSSerialInterface("/dev/serial0", 9600, 3000) as gps_interface:
+    with GPSSerialInterface(10, "/dev/serial0", 9600, 3000) as gps_interface:
         gps_interface.configureGPS() #configure GPS to return only RMC data @10hz
         msg = NavSatFix()
         pub = rospy.Publisher('/gps/gps_data', NavSatFix, queue_size=10)
