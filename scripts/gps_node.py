@@ -93,7 +93,7 @@ class GPSSerialInterface(SerialInterface):
         between 1-10 Hz
 
     TODO: Configure this class to provide more configuration options (in its current state the GPS is configured to transmit 
-    only RMC data at a rate of 10 Hz)
+    only RMC data with a refresh 1 to 10 hz)
     '''
 
     def __init__(self, refresh_rate, *args, **kwargs):
@@ -104,7 +104,7 @@ class GPSSerialInterface(SerialInterface):
             timeout (int): see attr
             refresh_rate (int): see attr
         '''
-        if not 1 >= refresh_rate <= 10:
+        if not 1 <= refresh_rate <= 10 or not isinstance(refresh_rate, int):
             raise ValueError('Inappropriate value for refresh_rate, must be an
             integer between 1 and 10')
 
