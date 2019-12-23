@@ -80,15 +80,33 @@ class SerialInterface:
 
 class GPSSerialInterface(SerialInterface):
     ''' 
-    THis class provides a specific serial interface for a GPS module recieving NMEA data. The GPS is configured to send
-    only RMC data at a rate of 10 Hz
+    This class provides a specific serial interface for a Adafruit Ultimate GPS v3 module recieving NMEA data. 
+
+    Attributes (identical to SerialInterface):
+        serial_address (str): the name of the serial connection
+        baud_rate (int): the baud rate of the serial connection
+        timeout (int): the maximum time in milliseconds for receiving bytes before returning
+        received_data (str): the received message from serial
+        uart (obj): the serial object
+
+    TODO: Configure this class to provide more configuration options (in its current state the GPS is configured to transmit 
+    only RMC data at a rate of 10 Hz)
     '''
+
     def __init__(self, *args, **kwargs):
-        ''' Method passes all given arguments to superclass and configures GPS to recieve RMC data and refresh at 10hz'''
+        '''
+        Arguments:
+            serial_channel (str): see attr
+            baud (int): see attr
+            timeout (int): see attr
+        '''
         SerialInterface.__init__(self, *args, **kwargs)
 
     def configureGPS(self):
-        ''' Configures GPS to return only RMC data and sets its refresh rate to 10Hz'''
+        '''
+        Configures GPS to return only RMC data and sets its refresh rate to 10 Hz
+        TODO: Provide further configuration options
+        '''
 
         self.send_command(self.uart, b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
         #Need to do sleep between commands so GPS accepts all of the commands.
@@ -97,7 +115,8 @@ class GPSSerialInterface(SerialInterface):
 
     def send_command(self, ser, command):
         '''
-        Formats commands to be sent to GPS with '$' character at beginning and adds a checksum and \r\n lines to the sent command
+        Formats commands sent to configure Adafruit Ultimate GPS v3 module so
+        they are accepted.
         This function is a modified version of adafruits send_command function in their adafruit-gps library
         (https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py) that works in python2
         '''
@@ -273,7 +292,7 @@ def transmitGPS():
     '''
 
     with GPSSerialInterface("/dev/serial0", 9600, 3000) as gps_interface:
-        gps_interface.configureGPS()
+        gps_interface.configureGPS() #configure GPS to return only RMC data @10hz
         msg = NavSatFix()
         pub = rospy.Publisher('/gps/raw_gps', NavSatFix, queue_size=10)
         rospy.init_node('raw_gps', anonymous=True)
