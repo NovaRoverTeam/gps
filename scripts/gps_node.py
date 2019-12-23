@@ -89,11 +89,10 @@ class GPSSerialInterface(SerialInterface):
         received_data (str): the received message from serial
         uart (obj): the serial object
 
-        refresh_rate: the rate at which the GPS module returns data - must lie
-        between 1-10 Hz
+        refresh_rate (int): the refresh rate of the GPS module between 1 to 10 
 
     TODO: Configure this class to provide more configuration options (in its current state the GPS is configured to transmit 
-    only RMC data with a refresh 1 to 10 hz)
+    only RMC data with a refresh rate of 1 to 10 hz)
     '''
 
     def __init__(self, refresh_rate, *args, **kwargs):
@@ -136,10 +135,13 @@ class GPSSerialInterface(SerialInterface):
 
     def send_command(self, ser, command):
         '''
-        Formats commands sent to configure Adafruit Ultimate GPS v3 module so
-        they are accepted.
+        Formats commands sent to configure Adafruit Ultimate GPS v3 module 
         This function is a modified version of adafruits send_command function in their adafruit-gps library
         (https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py) that works in python2
+
+        Arguments: 
+            ser (Serial instance - w/ open connection): the GPS connected via UART to send commands to
+            command - command to send to GPS
         '''
 
         ser.write(b'$')
