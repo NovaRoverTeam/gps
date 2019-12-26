@@ -104,8 +104,9 @@ class GPSSerialInterface(SerialInterface):
             refresh_rate (int): see attr
         '''
         if not 1 <= refresh_rate <= 10 or not isinstance(refresh_rate, int):
-            raise ValueError('Inappropriate value for refresh_rate, must be an
-            integer between 1 and 10')
+            raise ValueError('Inappropriate value for refresh_rate, must be an integer between 1 and 10')
+        else:
+            self.refresh_rate = refresh_rate
 
         SerialInterface.__init__(self, *args, **kwargs)
 
@@ -126,32 +127,31 @@ class GPSSerialInterface(SerialInterface):
 
         rate_command = b'PMTK220,' +  bytes(self.__determineMSValue(self))
         
-        self.send_command(self.uart, rate_command)
+        self.send_command(rate_command)
     
     def __determineMSValue(self):
         '''Helper function to determine ms delay value required to set GPS to
         desired refresh rate'''
         return int(1.0/self.refresh_rate * 1000)
 
-    def send_command(self, ser, command):
+    def send_command(self, command):
         '''
         Formats commands sent to configure Adafruit Ultimate GPS v3 module 
         This function is a modified version of adafruits send_command function in their adafruit-gps library
         (https://github.com/adafruit/Adafruit_CircuitPython_GPS/blob/master/adafruit_gps.py) that works in python2
 
         Arguments: 
-            ser (Serial instance - w/ open connection): the GPS connected via UART to send commands to
             command - command to send to GPS
         '''
 
-        ser.write(b'$')
-        ser.write(command)
+        self.uart.write(b'$')
+        self.uart.write(command)
         checksum = 0
         for char in command:
             checksum ^= ord(char)
-        ser.write(b'*')
-        ser.write(bytes('{:02x}'.format(checksum).upper()))
-        ser.write(b'\r\n')
+        self.uart.write(b'*')
+        self.uart.write(bytes('{:02x}'.format(checksum).upper()))
+        self.uart.write(b'\r\n')
 
 class NMEAParser:
     '''
