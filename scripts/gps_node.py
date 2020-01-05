@@ -121,11 +121,11 @@ class GPSSerialInterface(SerialInterface):
         '''
         
         #Receive only RMC Data
-        self.send_command(self.uart, b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
+        self.send_command(b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
         #Need to sleep between commands so GPS accepts all of the commands.
         time.sleep(1)
 
-        rate_command = b'PMTK220,' +  bytes(self.__determineMSValue(self))
+        rate_command = b'PMTK220,' +  bytes(self.__determineMSValue())
         
         self.send_command(rate_command)
     
