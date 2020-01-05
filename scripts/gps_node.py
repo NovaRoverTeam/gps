@@ -26,7 +26,7 @@ import serial
 import time
 from sensor_msgs.msg import NavSatFix
 # Frequency at which the main code is repeated
-ROS_REFRESH_RATE = 10
+ROS_REFRESH_RATE = 1
 
 class SerialInterface(object):
     '''
@@ -90,45 +90,81 @@ class GPSSerialInterface(SerialInterface):
         uart (obj): the serial object
 
         refresh_rate (int): the refresh rate of the GPS module between 1 to 10 
-
-    TODO: Configure this class to provide more configuration options (in its current state the GPS is configured to transmit 
-    only RMC data with a refresh rate of 1 to 10 hz)
+        nmea_sentences (list): A list of strings representing the NMEA sentences that should be enabled on the GPS. Valid entries are 'GGL', 'RMC', 'VTG', 'GGA', 'GSA', 'GSV' (any other entries are ignored.
     '''
 
-    def __init__(self, refresh_rate, *args, **kwargs):
+    def __init__(self, refresh_rate, nmea_sentences, *args, **kwargs):
         '''
         Arguments:
             serial_channel (str): see attr
             baud (int): see attr
             timeout (int): see attr
             refresh_rate (int): see attr
+            nmea_sentences (list): see attr
         '''
         if not 1 <= refresh_rate <= 10 or not isinstance(refresh_rate, int):
             raise ValueError('Inappropriate value for refresh_rate, must be an integer between 1 and 10')
         else:
             self.refresh_rate = refresh_rate
+        
+        self.nmea_sentences = nmea_sentences
 
         super(GPSSerialInterface, self).__init__(*args, **kwargs)
 
     def configureGPS(self):
         '''
-        Configures GPS to return only RMC data and sets its refresh rate to
+        Configures GPS to return specified NMEA sentence data and sets its refresh rate to
         value specified by refresh_rate attr
         WARNING: Setting a high refresh rate without limiting what types of data
         are returned will result in data loss
-        
-        TODO: Provide further configuration options
         '''
         
-        #Receive only RMC Data
-        self.send_command(b'PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0')
-        #Need to sleep between commands so GPS accepts all of the commands.
+        #Configure for desired NMEA Sentences
+        self.send_command(self.__generateNMEASentenceCommand())
+
+        #Need to sleep between commands so GPS accepts them 
         time.sleep(1)
 
         rate_command = b'PMTK220,' +  bytes(self.__determineMSValue())
         
         self.send_command(rate_command)
     
+    def __generateNMEASentenceCommand(self):
+        '''
+        Helper function to generate the byte command to be sent to the GPS module to configure it to return the desired NMEA sentences as specific if nmea_sentences attr. For explanation see commands datasheet @ cd-shop.adafruit.com/datasheets/PMTK_A11.pdf
+        '''
+        #base PMTK314 command with all outputs switched off (split into prefix and data fields
+        command_prefix = 'PMTK314'
+        data_fields = ',0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0'
+        
+        #dictionary that maps NMEA sentence to the corresponding data field index in the PMTK314
+        #command
+        nmea_sentence_map = {
+                'GGL': 0,
+                'RMC': 1,
+                'VTG': 2,
+                'GGA': 3,
+                'GSA': 4,
+                'GSV': 5
+                }
+        
+        data_fields = list(data_fields)                            
+        
+        for nmea_sentence in self.nmea_sentences:
+            try:
+                #Modify index to account for preceeding commas in data_fields list
+                index = nmea_sentence_map[nmea_sentence] * 2 + 1
+
+                #set corresponding data field value to '1' to enable NMEA sentence
+                data_fields[index] = '1'
+
+            #ignore invalid entries in nmea_sentences
+            except KeyError:
+                pass
+        data_fields = "".join(data_fields)
+
+        return bytes(command_prefix + data_fields)
+
     def __determineMSValue(self):
         '''Helper function to determine ms delay value required to set GPS to
         desired refresh rate'''
@@ -314,7 +350,7 @@ def transmitGPS():
     global variable ROS_REFRESH_RATE.
     '''
 
-    with GPSSerialInterface(10, "/dev/serial0", 9600, 3000) as gps_interface:
+    with GPSSerialInterface(ROS_REFRESH_RATE, ['RMC'], "/dev/serial0", 9600, 3000) as gps_interface:
         gps_interface.configureGPS() #configure GPS to return only RMC data @10hz
         msg = NavSatFix()
         pub = rospy.Publisher('/gps/gps_data', NavSatFix, queue_size=10)
