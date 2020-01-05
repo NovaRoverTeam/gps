@@ -28,7 +28,7 @@ from sensor_msgs.msg import NavSatFix
 # Frequency at which the main code is repeated
 ROS_REFRESH_RATE = 10
 
-class SerialInterface:
+class SerialInterface(object):
     '''
     This class provides a general interface with a serial port. It will open and read information from the 
     port until the end of the buffer.
@@ -108,7 +108,7 @@ class GPSSerialInterface(SerialInterface):
         else:
             self.refresh_rate = refresh_rate
 
-        SerialInterface.__init__(self, *args, **kwargs)
+        super(GPSSerialInterface, self).__init__(*args, **kwargs)
 
     def configureGPS(self):
         '''
