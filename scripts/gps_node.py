@@ -26,7 +26,7 @@ import serial
 import time
 from sensor_msgs.msg import NavSatFix
 # Frequency at which the main code is repeated
-ROS_REFRESH_RATE = 1
+ROS_REFRESH_RATE = 10
 
 class SerialInterface(object):
     '''
@@ -351,12 +351,14 @@ def transmitGPS():
     '''
 
     with GPSSerialInterface(ROS_REFRESH_RATE, ['RMC'], "/dev/serial0", 9600, 3000) as gps_interface:
-        gps_interface.configureGPS() #configure GPS to return only RMC data @10hz
+        gps_interface.configureGPS() 
+
         msg = NavSatFix()
         pub = rospy.Publisher('/gps/gps_data', NavSatFix, queue_size=10)
         rospy.init_node('gps_data', anonymous=True)
         rate = rospy.Rate(ROS_REFRESH_RATE)
         parser = NMEAParser('NMEA_0183')
+
         while not rospy.is_shutdown():
             received_data = gps_interface.readSerialInput()                 # Get serial data
             rospy.loginfo(received_data)
