@@ -10,7 +10,7 @@ More information on the wiring of the sensor + transmitted data can be found her
 https://cdn-learn.adafruit.com/downloads/pdf/adafruit-ultimate-gps.pdf
 
 Author: Andrew Stuart (94andrew.stuart@gmail.com)
-Last modified: 17/12/2019 by Josh Cherubino (josh.cherubino@gmail.com)
+Last modified: 5/1/2020 by Josh Cherubino (josh.cherubino@gmail.com)
 
 Publishes:
     NatSatFix (sensor_msgs) named /gps/gps_data:
@@ -161,6 +161,7 @@ class GPSSerialInterface(SerialInterface):
             #ignore invalid entries in nmea_sentences
             except KeyError:
                 pass
+            
         data_fields = "".join(data_fields)
 
         return bytes(command_prefix + data_fields)
